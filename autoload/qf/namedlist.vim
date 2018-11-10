@@ -113,4 +113,11 @@ function! qf#namedlist#CompleteList(ArgLead, CmdLine, CursorPos)
     return completions
 endfunction
 
+fun! g:qf#namedlist#GetLists() abort
+    return keys(s:named_lists)
+endf
+fun! g:qf#namedlist#GetCurrent() abort
+    return s:last_saved_list
+endf
+
 let &cpo = s:save_cpo
