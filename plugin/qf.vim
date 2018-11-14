@@ -50,7 +50,9 @@ nnoremap <silent>        <Plug>(qf_loc_toggle)      :<C-u> call qf#toggle#Toggle
 nnoremap <silent>        <Plug>(qf_loc_toggle_stay) :<C-u> call qf#toggle#ToggleLocWindow(1)<CR>
 
 " Jump to and from list
-nnoremap <silent> <expr> <Plug>(qf_qf_switch)       &filetype ==# 'qf' ? '<C-w>p' : '<C-w>b'
+" nnoremap <silent> <expr> <Plug>(qf_qf_switch)       &filetype ==# 'qf' ? '<C-w>p' : '<C-w>b'
+nnoremap <Plug>(qf_qf_switch)       :<C-u>call qf#switch(1)<CR>
+nnoremap <Plug>(qf_loc_switch)       :<C-u>call qf#switch(2)<CR>
 
 augroup qf
     autocmd!

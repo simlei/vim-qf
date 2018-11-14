@@ -20,7 +20,7 @@ let s:save_cpo = &cpo
 set cpo&vim
 
 " open the current entry in th preview window
-function qf#PreviewFileUnderCursor()
+function! qf#PreviewFileUnderCursor()
     let cur_list = b:qf_isLoc == 1 ? getloclist('.') : getqflist()
     let cur_line = getline(line('.'))
     let cur_file = fnameescape(substitute(cur_line, '|.*$', '', ''))
@@ -49,8 +49,49 @@ endfunction
 " returns 1 if the window with the given number is a location window
 "         0 if the window with the given number is not a location window
 function! qf#IsLocWindow(nmbr)
-    return getbufvar(winbufnr(a:nmbr), "qf_isLoc") == 1
+    let indicator = 0
+    if has('quickfix')
+        let indicator = getwininfo(win_getid(a:nmbr))[0]['loclist']
+    endif
+    return getbufvar(winbufnr(a:nmbr), "qf_isLoc") == 1 || indicator
 endfunction
+
+
+"TODO: doc, rename
+function! qf#type(nbr)
+    if qf#IsQfWindow(a:nbr)
+        return 1
+    elseif qf#IsLocWindow(a:nbr)
+        return 2
+    else
+        return 0
+    endif
+endf
+
+" TODO: doc
+function! qf#switch(toType)
+    let curtype = qf#type(winnr())
+    if curtype == a:toType
+        wincmd p
+        " check if we are still in the same type of window. Most likely the jump list got corrupted, that happens frequently. Then: panic and try to find a window that is not the same
+        if qf#type(winnr()) == curtype
+            for winnum in range(1, winnr('$'))
+                let tpe = qf#type(winnum)
+                if tpe == 0
+                    exec winnum."wincmd W"
+                endif
+            endfor
+        endif
+    else
+        for winnum in range(1, winnr('$'))
+            let tpe = qf#type(winnum)
+            if tpe == a:toType
+                exec winnum."wincmd W"
+                return
+            endif
+        endfor
+    endif
+endf
 
 " returns bool: Is quickfix window open?
 function! qf#IsQfWindowOpen() abort
