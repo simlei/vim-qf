@@ -1,4 +1,4 @@
-" vim-qf - Tame the quickfix window
+" vim-qf - Tame the quickfix windomw
 " Maintainer:	romainl <romainlafourcade@gmail.com>
 " Version:	0.2.0
 " License:	MIT
@@ -68,13 +68,110 @@ function! qf#type(nbr)
     endif
 endf
 
+fun! qf#getWinForLoclist(loclistWNr) abort
+    if !qf#type(a:loclistWNr)
+        echoerr "cannot call qf#getWinForLoclist for a non-loclist"
+        return
+    endif
+    return win_id2win(getloclist(a:loclistWNr, {'filewinid': 0})['filewinid'])
+    " let reflist = getloclist(a:loclistWNr)
+    " for winnum in range(1, winnr('$'))
+    "     if qf#type(winnum) > 0
+    "         continue
+    "     endif
+    "     let loclist = getloclist(winnum)
+    "     if loclist ==# reflist
+    "         return winnum
+    "     endif
+    " endfor
+    " return -1
+endf
+fun! qf#getLoclistForWin(winNr) abort
+    for winnum in range(1, winnr('$'))
+        if qf#type(winnum) != 2
+            continue
+        endif
+        if qf#getWinForLoclist(winnum) == a:winNr
+            return winnum
+        endif
+    endfor
+    return -1
+    " deprecated, as inflecting getWinForLoclist is more precise
+    " let reflist = getloclist(a:winNr)
+    " for winnum in range(1, winnr('$'))
+    "     if qf#type(winnum) != 2
+    "         continue
+    "     endif
+    "     let loclist = getloclist(winnum)
+    "     if loclist ==# reflist
+    "         return winnum
+    "     endif
+    " endfor
+    " return -1
+endf
+
 " TODO: doc
-function! qf#switch(toType)
+function! qf#switch(toType, permitReopen, takeAnyLoclist)
     let curtype = qf#type(winnr())
+    let curwinnr = winnr()
+    if a:toType == 1
+        if curtype != 1
+            if qf#IsQfWindowOpen()
+                exec qf#GetAnyWindow(a:toType)."wincmd w"
+                return
+                "TODO: unify to use one method
+            else
+                if a:permitReopen
+                    call qf#toggle#ToggleQfWindow(winnr())
+                    return
+                else
+                    "apparenty, nothing happens
+                    return
+                endif
+            endif
+        else
+            wincmd p
+            " no return, may need to de-panic
+        endif
+    elseif a:toType == 2
+        if curtype != 2
+            let locForWin = qf#getLoclistForWin(curwinnr)
+            if locForWin > -1
+                exec locForWin."wincmd w"
+                return
+            else
+                let anyLoc = qf#GetAnyWindow(2)
+                if anyLoc > -1
+                    if a:takeAnyLoclist
+                        exec anyLoc."wincmd w"
+                        return
+                    else " any loc aint good enough, go to co-if routine
+                    endif
+                endif
+                if a:permitReopen
+                    call qf#toggle#ToggleLocWindow(winnr())
+                    return
+                else
+                    " apparently, nothing happens. TODO: not even anyLoc?
+                    return
+                endif
+            endif
+        else
+            let winnr = qf#getWinForLoclist(winnr())
+            if winnr > -1
+                exec winnr."wincmd w"
+                return
+            else
+                wincmd p
+                " no return, may need to de-panic
+            endif
+        endif
+    endif
+    " de-panic after wincmd p (did not return above); when that failed
     if curtype == a:toType
-        wincmd p
-        " check if we are still in the same type of window. Most likely the jump list got corrupted, that happens frequently. Then: panic and try to find a window that is not the same
-        if qf#type(winnr()) == curtype
+        let afterType = qf#type(winnr())
+        " check if we are still in the same type of window. Maybe the window belonging to the loclist was not open. Most likely the jump list got corrupted, that happens frequently. Then: panic and try to find a window that is not the same
+        if afterType == curtype
             for winnum in range(1, winnr('$'))
                 let tpe = qf#type(winnum)
                 if tpe == 0
@@ -83,13 +180,14 @@ function! qf#switch(toType)
             endfor
         endif
     else
-        for winnum in range(1, winnr('$'))
-            let tpe = qf#type(winnum)
-            if tpe == a:toType
-                exec winnum."wincmd W"
-                return
-            endif
-        endfor
+        " this should not be necessary
+        " for winnum in range(1, winnr('$'))
+        "     let tpe = qf#type(winnum)
+        "     if tpe == a:toType
+        "         exec winnum."wincmd W"
+        "         return
+        "     endif
+        " endfor
     endif
 endf
 
@@ -105,10 +203,17 @@ endfunction
 
 " returns bool: Is location window for window with given number open?
 function! qf#IsLocWindowOpen(nmbr) abort
-    let loclist = getloclist(a:nmbr)
+    return qf#getLoclistForWin(a:nmbr)>-1
+endfunction
+
+" looks for a loc window corresponding to any window.
+function! qf#GetAnyWindow(type) abort
+    if type(winnr()) == a:type " special treatment for current window to get preference
+        return winnr
+    endif
     for winnum in range(1, winnr('$'))
-        if qf#IsLocWindow(winnum) && loclist ==# getloclist(winnum)
-            return 1
+        if qf#type(winnum) == a:type
+            return winnum
         endif
     endfor
     return 0
@@ -118,7 +223,7 @@ endfunction
 "         qf list otherwise
 function! qf#GetList()
     if get(b:, 'qf_isLoc', 0)
-        return getloclist(0)
+        return getloclist(winnr())
     else
         return getqflist()
     endif
