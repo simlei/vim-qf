@@ -1,0 +1,3 @@
+i think I have changed in original toggle implementation, that lopen and copen are used instead of lwindow and cwindow.
+in switch, I do not rely anymore on toggle
+toggle with moving back and forth with wincmd p somethimes misses it when there are 2 windows with the same buffer open -- or not? check!

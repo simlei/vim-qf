@@ -122,7 +122,7 @@ function! qf#switch(toType, permitReopen, takeAnyLoclist)
                 "TODO: unify to use one method
             else
                 if a:permitReopen
-                    call qf#toggle#ToggleQfWindow(winnr())
+                    cope
                     return
                 else
                     "apparenty, nothing happens
@@ -149,7 +149,7 @@ function! qf#switch(toType, permitReopen, takeAnyLoclist)
                     endif
                 endif
                 if a:permitReopen
-                    call qf#toggle#ToggleLocWindow(winnr())
+                    lopen
                     return
                 else
                     " apparently, nothing happens. TODO: not even anyLoc?
@@ -211,12 +211,15 @@ function! qf#GetAnyWindow(type) abort
     if type(winnr()) == a:type " special treatment for current window to get preference
         return winnr
     endif
+    if type(winnr('#')) == a:type " special treatment for last window to get next preference
+        return winnr
+    endif
     for winnum in range(1, winnr('$'))
         if qf#type(winnum) == a:type
             return winnum
         endif
     endfor
-    return 0
+    return -1
 endfunction
 
 " returns location list of the current loclist if isLoc is set
