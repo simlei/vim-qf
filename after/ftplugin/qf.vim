@@ -34,7 +34,7 @@ set nobuflisted
 let b:undo_ftplugin .= "| setl wrap< rnu< nu< bl<"
 
 " are we in a location list or a quickfix list?
-let b:qf_isLoc = !empty(getloclist(0))
+let b:qf_isLoc = !empty(getloclist(0)) || getwininfo(win_getid(winnr()))[0]['loclist'] 
 
 " customize the statusline
 if exists("g:qf_statusline")

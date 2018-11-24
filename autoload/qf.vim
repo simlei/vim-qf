@@ -110,6 +110,31 @@ fun! qf#getLoclistForWin(winNr) abort
     " return -1
 endf
 
+" TODOitclean: hack it by setting a qftype field on these dictionaries
+function! qf#getWinInfos(...) abort
+    let types = get(a:, 1, [1,2])
+    let result = []
+    for n in range(winnr('$'))
+        let wnr = n+1
+        let tpe = qf#type(wnr)
+        if index(types, tpe) != -1
+            let info = GetWinInfo(wnr)
+            let info.qftype = tpe
+            call add(result, info)
+        endif
+    endfor
+    return result
+endf
+function! qf#OnEach(wintypelist, action)
+    let infos = qf#getWinInfos(a:wintypelist)
+    " call lh#list#for_each_call(infos, a:action) 
+    for i in infos
+        call call(a:action, [i])
+    endfor
+
+endf
+
+
 " TODO: doc
 function! qf#switch(toType, permitReopen, takeAnyLoclist)
     let curtype = qf#type(winnr())
@@ -203,6 +228,9 @@ endfunction
 
 " returns bool: Is location window for window with given number open?
 function! qf#IsLocWindowOpen(nmbr) abort
+    if qf#type(a:nmbr) == 2
+        return 1
+    endif
     return qf#getLoclistForWin(a:nmbr)>-1
 endfunction
 
