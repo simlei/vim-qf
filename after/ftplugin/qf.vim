@@ -84,7 +84,7 @@ endif
 " usage:
 "   :Filter foo     <-- same as :Keep foo
 "   :Filter! foo    <-- same as :Reject foo
-" command! -buffer -range -nargs=1 -bang Filter call qf#filter#FilterList(<q-args>, expand("<bang>") == "!" ? 1 : 0)
+command! -buffer -range -nargs=1 -bang Filter call qf#filter#FilterList(<q-args>, expand("<bang>") == "!" ? 1 : 0)
 
 " keep entries matching the argument
 " usage:
